@@ -33,5 +33,5 @@ position is in [docs/manifesto.md](docs/manifesto.md).
 
 ## Status
 
-Empty. Desired states live in `bullseye.yaml`. No GitHub remote until
-visibility is chosen.
+Empty. Desired states live in `bullseye.yaml`.
+Public: https://github.com/marcelocantos/locum
