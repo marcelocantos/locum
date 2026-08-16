@@ -1,0 +1,9 @@
+.DS_Store
+.env
+.env.*
+*.pem
+*.key
+auth-state.json
+**/storage-state.json
+.playwright-cli/
+.agent-browser/
