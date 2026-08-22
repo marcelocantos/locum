@@ -1,0 +1,325 @@
+# hygiene.yaml — declared, drift-validated hygiene posture for locum.
+# Schema: ~/.claude/skills/hygiene/SKILL.md. Validate with `/hygiene`.
+# This repo is a pre-implementation ledger (no source, tests, or CI).
+# Floors are the held tiers reality already reaches; gaps sit above them.
+
+schema_version: 1
+
+repo: locum
+aspires: 3
+floors:            # per-dimension held-tier ratchet; below floor => DRIFT
+  correctness: 0   # no tests, no CI
+  security: 1      # gitignore secret/session residue + GitHub secret scanning
+  quality: 0       # no linter or formatter; no source
+  deps: 0          # no language manifest or lockfile
+  release: 0       # no tags, changelog, or release workflow
+  governance: 2    # Apache LICENSE + README + .gitignore; squash-only merges
+  build: 0         # no Makefile, no workflows
+  docs: 1          # manifesto + bullseye ledger present; no link checker
+  perf: 0          # no runtime, no benchmarks
+  vcs: 0           # no committed hooks; default branch unprotected
+  agent: 1         # bullseye.yaml present; no AGENTS.md
+
+tiers:
+  1: baseline    # LICENSE + README + .gitignore; tests build & run
+  2: maintained  # full matrix, examples run, lint/format, release + governance
+  3: hardened    # formal specs, security scanning, SBOM/signing, fuzzing, perf
+
+items:
+
+  # ============================== CORRECTNESS =============================
+  - id: correctness.tests
+    dim: correctness
+    desc: Tests exist and run on a shipped path (CI job or make target)
+    state: planned
+    cadence: continuous
+    enforce: blocking
+    tier: 1
+    reason: Ledger-only; no implementation, test tree, Makefile, or CI yet.
+    evidence: {absent: {ci_job: ci.yml#test}}
+
+  - id: correctness.fuzzing
+    dim: correctness
+    desc: Fuzz harnesses over parsers or protocol state
+    state: skipped
+    cadence: continuous
+    enforce: informational
+    tier: 3
+    reason: No parsers or runtime to fuzz; revisit when an implementation exists.
+    evidence: {absent: {ci_job: ci.yml#fuzz}}
+
+  # =========================== SECURITY / SUPPLY ==========================
+  - id: security.secret-gitignore
+    dim: security
+    desc: .gitignore excludes env files, keys, and browser session state
+    state: present
+    cadence: once-must-hold
+    enforce: blocking
+    tier: 1
+    evidence: {file: {path: .gitignore, matches: 'storage-state\.json'}}
+
+  - id: security.github-secret-scan
+    dim: security
+    desc: GitHub secret scanning enabled on the public repo
+    state: enforced
+    cadence: continuous
+    enforce: blocking
+    tier: 1
+    evidence:
+      {gh_setting: {key: security_and_analysis.secret_scanning.status, equals: enabled}}
+
+  - id: security.github-push-protection
+    dim: security
+    desc: GitHub secret-scanning push protection enabled
+    state: enforced
+    cadence: continuous
+    enforce: blocking
+    tier: 1
+    evidence:
+      {
+        gh_setting: {
+          key: security_and_analysis.secret_scanning_push_protection.status,
+          equals: enabled,
+        }
+      }
+
+  - id: security.gitleaks
+    dim: security
+    desc: Secret scanning (gitleaks) in pre-commit and/or CI
+    state: planned
+    cadence: continuous
+    enforce: blocking
+    tier: 3
+    reason: No CI or gitleaks config; relying on GitHub secret scanning + .gitignore.
+    evidence: {absent: {scanner: {tool: gitleaks}}}
+
+  - id: security.sast
+    dim: security
+    desc: Static application security testing (CodeQL)
+    state: skipped
+    cadence: continuous
+    enforce: informational
+    tier: 3
+    reason: No source language to analyze; GitHub languages is empty.
+    evidence: {absent: {ci_job: ci.yml#codeql}}
+
+  - id: security.dependabot
+    dim: security
+    desc: Dependabot security updates on a lockfile
+    state: skipped
+    cadence: periodic:30d
+    enforce: informational
+    tier: 3
+    reason: No dependency manifests; Dependabot security updates are disabled.
+    evidence:
+      {
+        absent: {
+          gh_setting: {
+            key: security_and_analysis.dependabot_security_updates.status,
+            equals: enabled,
+          }
+        }
+      }
+
+  # ============================== CODE QUALITY ============================
+  - id: quality.lint
+    dim: quality
+    desc: A linter or formatter runs on the shipped path
+    state: planned
+    cadence: continuous
+    enforce: warning
+    tier: 2
+    reason: No implementation corpus and no linter config.
+    evidence: {absent: {file: {path: .clang-format}}}
+
+  # =========================== DEPENDENCY HEALTH ==========================
+  - id: deps.lockfile
+    dim: deps
+    desc: Language lockfile pins the dependency graph once an implementation exists
+    state: planned
+    cadence: per-release
+    enforce: warning
+    tier: 2
+    reason: No language or package manager chosen; no lockfile to pin.
+    evidence: {absent: {file: {path: Cargo.lock}}}
+
+  # ========================== RELEASE & VERSIONING =======================
+  - id: release.changelog
+    dim: release
+    desc: A maintained CHANGELOG records user-visible changes per release
+    state: planned
+    cadence: per-release
+    enforce: warning
+    tier: 2
+    reason: No releases or tags yet; history is git commits only.
+    evidence: {absent: {file: {path: CHANGELOG.md}}}
+
+  - id: release.ci-built
+    dim: release
+    desc: Release artifacts are built by CI, never locally
+    state: planned
+    cadence: per-release
+    enforce: warning
+    tier: 3
+    reason: No implementation, no release workflow, no tags.
+    evidence: {absent: {ci_job: release.yml#build}}
+
+  # ============================ GOVERNANCE / META ========================
+  - id: governance.license
+    dim: governance
+    desc: Apache-2.0 LICENSE present
+    state: present
+    cadence: once-must-hold
+    enforce: blocking
+    tier: 1
+    evidence: {file: {path: LICENSE, matches: 'Apache License'}}
+
+  - id: governance.readme
+    dim: governance
+    desc: README present
+    state: present
+    cadence: once-must-hold
+    enforce: blocking
+    tier: 1
+    evidence: {file: {path: README.md}}
+
+  - id: governance.gitignore
+    dim: governance
+    desc: .gitignore covers OS files and future secret/session residue
+    state: present
+    cadence: once-must-hold
+    enforce: warning
+    tier: 1
+    evidence: {file: {path: .gitignore}}
+
+  - id: governance.squash-only
+    dim: governance
+    desc: Repo is squash-merge only
+    state: enforced
+    cadence: once-must-hold
+    enforce: blocking
+    tier: 2
+    evidence: {gh_setting: {key: allow_merge_commit, equals: false}}
+
+  - id: governance.security-md
+    dim: governance
+    desc: SECURITY.md documents the vulnerability-disclosure process
+    state: planned
+    cadence: once-must-hold
+    enforce: informational
+    tier: 3
+    reason: Public ledger without a published disclosure policy yet.
+    evidence: {absent: {file: {path: SECURITY.md}}}
+
+  - id: governance.notice
+    dim: governance
+    desc: NOTICE or README copyright line names year and owner
+    state: planned
+    cadence: once-must-hold
+    enforce: informational
+    tier: 3
+    reason: LICENSE appendix still has the Apache placeholder; no NOTICE yet.
+    evidence: {absent: {file: {path: NOTICE}}}
+
+  - id: governance.codeowners
+    dim: governance
+    desc: CODEOWNERS file for review routing
+    state: skipped
+    cadence: once-must-hold
+    enforce: informational
+    tier: 3
+    reason: Sole owner; no review-routing surface.
+    evidence: {absent: {file: {path: CODEOWNERS}}}
+
+  # ================================= BUILD ===============================
+  - id: build.ci
+    dim: build
+    desc: CI workflow builds the project
+    state: planned
+    cadence: continuous
+    enforce: blocking
+    tier: 2
+    reason: Ledger-only; no source, Makefile, or .github/workflows.
+    evidence: {absent: {file: {path: .github/workflows/ci.yml}}}
+
+  # ============================ DOCUMENTATION ============================
+  - id: docs.manifesto
+    dim: docs
+    desc: Position lives in docs/manifesto.md
+    state: present
+    cadence: once-must-hold
+    enforce: warning
+    tier: 1
+    evidence: {file: {path: docs/manifesto.md}}
+
+  - id: docs.bullseye
+    dim: docs
+    desc: bullseye.yaml is the intent ledger for followable work
+    state: present
+    cadence: once-must-hold
+    enforce: informational
+    tier: 1
+    evidence: {file: {path: bullseye.yaml}}
+
+  - id: docs.md-links
+    dim: docs
+    desc: Internal markdown links resolve (no dead cross-references)
+    state: planned
+    cadence: continuous
+    enforce: warning
+    tier: 2
+    reason: No link checker or CI job; ledger markdown is not mechanically verified.
+    evidence: {absent: {ci_job: ci.yml#docs}}
+
+  # ============================== PERFORMANCE ===========================
+  - id: perf.benchmarks
+    dim: perf
+    desc: Benchmark suite exists
+    state: planned
+    cadence: per-release
+    enforce: informational
+    tier: 3
+    reason: No runtime to benchmark.
+    evidence: {absent: {file: {path: benches}}}
+
+  # ============================== VCS / HISTORY =========================
+  - id: vcs.branch-protection
+    dim: vcs
+    desc: Default branch (master) is protected
+    state: planned
+    cadence: once-must-hold
+    enforce: warning
+    tier: 2
+    reason: master has no branch protection or rulesets (API 404 / empty).
+    evidence:
+      {command: gh api repos/marcelocantos/locum/branches/master/protection}
+
+  - id: vcs.pre-commit-hook
+    dim: vcs
+    desc: Committed git hooks (scripts/hooks) gate locally before commit
+    state: planned
+    cadence: once-must-hold
+    enforce: informational
+    tier: 3
+    reason: No scripts/hooks; core.hooksPath is the default .git/hooks.
+    evidence: {absent: {file: {path: scripts/hooks/pre-commit}}}
+
+  # =================== AGENT-READINESS / ONBOARDING ====================
+  - id: agent.bullseye
+    dim: agent
+    desc: bullseye.yaml present (convergence targets discoverable)
+    state: present
+    cadence: once-must-hold
+    enforce: informational
+    tier: 1
+    evidence: {file: {path: bullseye.yaml}}
+
+  - id: agent.agents-md
+    dim: agent
+    desc: AGENTS.md present (project conventions discoverable by agents)
+    state: planned
+    cadence: once-must-hold
+    enforce: warning
+    tier: 2
+    reason: Ledger-only and no AGENTS.md/CLAUDE.md yet; add when implementation starts.
+    evidence: {absent: {file: {path: AGENTS.md}}}
