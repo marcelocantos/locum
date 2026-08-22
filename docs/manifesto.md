@@ -69,14 +69,14 @@ agent all look like. Sight does not prove who authorized the access.
 - The authenticator will not sign a passkey without user verification.
   The private key never reaches the page. `op item get` cannot complete
   the ceremony. 1Password can, as an authenticator (extension or OS
-  passkey provider), not as a CLI secret. The human sees a Touch ID
-  sheet. The RP name on that sheet comes from the authenticator, not
-  from the page title.
+  passkey provider), not as a CLI secret. The human sees a vault /
+  passkey UV sheet (Touch ID or 1Password). The RP name on that sheet
+  comes from the authenticator, not from the page title.
 - An SMS or email OTP lives on a channel locum does not have. The
-  interrupt is “type the six digits that just went to your phone for
-  GitHub.” The agent already filled the form and followed the hops.
-- A push or a hardware tap is “approve the GitHub prompt on your
-  phone.” Nothing else.
+  interrupt names the site and asks only for the code. The agent
+  already filled the form and followed the hops.
+- A push ack (a push or a hardware tap — one kind) is “approve the
+  prompt on your phone for *site*.” Nothing else.
 
 After the vault is unlocked, username, password, TOTP, SAML, and
 consent chrome are the agent’s.
@@ -133,8 +133,10 @@ The residual is real and smaller than “make the human drive Okta.”
 ## What locum is not
 
 - A better Playwright MCP on the same locked profile
+- One shared logged-in identity across all work
 - A Chrome monopoly
 - A custom password manager
+- A deputy that puts vault secrets in model context or tool-call arguments
 - A virtual authenticator for real accounts
 - A CAPTCHA cracker
 - A product that finishes the web
@@ -148,12 +150,16 @@ to” does not converge.
 
 ## The human surface, complete
 
+These kinds are the 🎯T1.7 possession atoms (hardware tap is push ack).
+Scored-challenge exits match 🎯T1.12: avoid the surface, hand a real
+window, or stop.
+
 | Interrupt | What you see |
 |---|---|
-| Vault unlock / passkey UV | System or 1Password sheet |
-| SMS / email OTP | The digits, and the site name |
-| Push / hardware tap | “Approve on your phone for *site*” |
-| Scored challenge | A real window, or a stop |
+| Vault / passkey UV | System or 1Password sheet |
+| OTP digits | The digits, and the site name |
+| Push ack | “Approve the prompt on your phone for *site*” |
+| Scored challenge | Avoid the surface, a real window, or a stop |
 | Everything else | Nothing |
 
 If locum is showing you Okta, it has already failed.
